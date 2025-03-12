@@ -32,7 +32,7 @@ public class TicketController {
         Ticket ticket = new Ticket(
                 id++,
                 newTicket.getPassengerName(),
-                LocalDate.now(),
+                newTicket.getTraveldate().now(),
                 newTicket.getSourceStation(),
                 newTicket.getDestinationStation(),
                 newTicket.getPrice(),
@@ -82,44 +82,62 @@ public class TicketController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<ApiResponse<Ticket>> getTicketsByName(@RequestParam String passengerName){
+    public ResponseEntity<ApiResponse<ArrayList<Ticket>>> getTicketsByName(@RequestParam String passengerName){
             ArrayList<Ticket> searchTicketName = new ArrayList<>();
             for(Ticket t : tickets){
                 if(t.getPassengerName().equalsIgnoreCase(passengerName)){
                     searchTicketName.add(t);
-                    ApiResponse<Ticket> apiResponse = new ApiResponse<>(
-                            true,
-                            "Passenger Name searched Found.",
-                            HttpStatus.OK,
-                            t,
-                            LocalDateTime.now()
-                    );
-                    return ResponseEntity.ok(apiResponse);
-
                 }
             }
-        ApiResponse<Ticket> apiResponse = new ApiResponse<>(
+
+        if (!searchTicketName.isEmpty()) {
+            ApiResponse<ArrayList<Ticket>> apiResponse = new ApiResponse<>(
+                    true,
+                    "Passenger Name searched Found.",
+                    HttpStatus.OK,
+                    searchTicketName,
+                    LocalDateTime.now()
+            );
+            return ResponseEntity.ok(apiResponse);
+        }
+        ApiResponse<ArrayList<Ticket>> apiResponse = new ApiResponse<>(
                 false,
                 "Passenger Name searched not Found.",
                 HttpStatus.NOT_FOUND,
-                null,
+                new ArrayList<>(),
                 LocalDateTime.now()
         );
-        return ResponseEntity.ok(apiResponse);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponse);
     }
 
     @GetMapping("/filter")
-    public ArrayList<Ticket> filterDateAndTicketStatus(@RequestParam Boolean tStatus, @RequestParam String tDate){
+    public ResponseEntity<ApiResponse<ArrayList<Ticket>>> filterDateAndTicketStatus(@RequestParam String tStatus, @RequestParam LocalDate tDate){
         ArrayList<Ticket> filterTicket = new ArrayList<>();
-//        System.out.println(tStatus);
-//        System.out.println(tDate);
+        System.out.println(tStatus);
+        System.out.println(tDate);
         for(Ticket t : tickets){
-//            if(t.getTraveldate().equalsIgnoreCase(tDate)){
-//                filterTicket.add(t);
-//                return filterTicket;
-//            }
+            if(t.getTicketStatus().equalsIgnoreCase(tStatus) && t.getTraveldate().equals(tDate)){
+                filterTicket.add(t);
+            }
         }
-        return null;
+        if (!filterTicket.isEmpty()) {
+            ApiResponse<ArrayList<Ticket>> apiResponse = new ApiResponse<>(
+                    true,
+                    "Tickets filtered successfully",
+                    HttpStatus.OK,
+                    filterTicket,
+                    LocalDateTime.now()
+            );
+            return ResponseEntity.ok(apiResponse);
+        }
+        ApiResponse<ArrayList<Ticket>> apiResponse = new ApiResponse<>(
+                false,
+                "Tickets filtered not successfully",
+                HttpStatus.NOT_FOUND,
+                new ArrayList<>(),
+                LocalDateTime.now()
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponse);
     }
 
     @PutMapping("/{ticket-id}")
